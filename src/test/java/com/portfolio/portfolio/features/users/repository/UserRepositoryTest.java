@@ -68,4 +68,5 @@ class UserRepositoryTest {
         assertEquals(user.getId(), userById.getId(), () -> "Usuario não econtrado");
     }
 
+
 }
