@@ -8,7 +8,7 @@ import lombok.Setter;
 
 import java.util.UUID;
 
-@Table(name = "user")
+@Table(name = "users")
 @Entity
 @Getter
 @Setter
@@ -26,6 +26,7 @@ public class User {
     private String password;
 
     @Column(length = 10)
+    @Enumerated(EnumType.STRING)
     private Roles roles;
 
 }
