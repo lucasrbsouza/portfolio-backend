@@ -17,12 +17,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
+
     @Mock
     UserRepository repository;
 
@@ -34,38 +34,42 @@ class UserServiceImplTest {
 
     UserDTORequest request;
     User user;
-
+    User savedUser;
+    UserDTOResponse response;
+    UUID userId;
 
     @BeforeEach
     void setUp() {
+        userId = UUID.randomUUID();
+
         request = new UserDTORequest(
                 "Lucas",
                 "lucas123",
                 Roles.ADMIN
         );
+
         user = new User();
         user.setUsername("Lucas");
         user.setPassword("lucas123");
         user.setRoles(Roles.ADMIN);
 
+        savedUser = new User();
+        savedUser.setId(userId);
+        savedUser.setUsername("Lucas");
+        savedUser.setPassword("lucas123");
+        savedUser.setRoles(Roles.ADMIN);
+
+        response = new UserDTOResponse(
+                savedUser.getId(),
+                savedUser.getUsername(),
+                savedUser.getRoles()
+        );
     }
 
     @DisplayName("deve criar usuario com sucesso")
     @Test
     void deve_criar_usuario_com_sucesso() {
         // given
-        User savedUser = new User();
-        savedUser.setId(UUID.randomUUID());
-        savedUser.setUsername("Lucas");
-        savedUser.setPassword("lucas123");
-        savedUser.setRoles(Roles.ADMIN);
-
-        UserDTOResponse response = new UserDTOResponse(
-                savedUser.getId(),
-                savedUser.getUsername(),
-                savedUser.getRoles()
-        );
-
         when(mapper.userDTOToUser(request)).thenReturn(user);
         when(repository.save(user)).thenReturn(savedUser);
         when(mapper.userToUserDTOResponse(savedUser)).thenReturn(response);
@@ -83,34 +87,65 @@ class UserServiceImplTest {
         verify(mapper).userToUserDTOResponse(savedUser);
     }
 
-    @DisplayName("deve listar usuarios por ID")
+    @DisplayName("deve listar usuario por ID")
     @Test
-    void deve_listar_usuarios_por_id() {
-        UUID userId = UUID.randomUUID();
-        //given
-        User savedUser = new User();
-        savedUser.setId(userId);
-        savedUser.setUsername("Lucas");
-        savedUser.setPassword("lucas");
-        savedUser.setRoles(Roles.ADMIN);
-
-        UserDTOResponse userDTOResponse = new UserDTOResponse(
-                savedUser.getId(),
-                savedUser.getUsername(),
-                savedUser.getRoles()
-        );
-        //when
+    void deve_listar_usuario_por_id() {
+        // given
         when(repository.findById(userId)).thenReturn(Optional.of(savedUser));
-        when(mapper.userToUserDTOResponse(savedUser)).thenReturn(userDTOResponse);
-        //Then
-        UserDTOResponse result = service.findById(savedUser.getId());
+        when(mapper.userToUserDTOResponse(savedUser)).thenReturn(response);
 
-        assertEquals(savedUser.getId(), result.id());
-        assertEquals(savedUser.getUsername(), result.username());
-        assertEquals(savedUser.getRoles(), result.roles());
+        // when
+        UserDTOResponse result = service.findById(userId);
 
-        verify(repository, times(1)).findById(userId);
-        verify(repository, never()).save(savedUser);
+        // then
+        assertNotNull(result);
+        assertEquals(userId, result.id());
+        assertEquals("Lucas", result.username());
+        assertEquals(Roles.ADMIN, result.roles());
+
+        verify(repository).findById(userId);
+        verify(repository, never()).save(any());
     }
 
+    @DisplayName("deve atualizar usuario com sucesso")
+    @Test
+    void deve_atualizar_usuario_com_sucesso() {
+        // given
+        UserDTORequest updateRequest = new UserDTORequest(
+                "Lucas",
+                "novaSenha",
+                Roles.ADMIN
+        );
+
+        when(repository.findById(userId)).thenReturn(Optional.of(savedUser));
+        when(repository.save(savedUser)).thenReturn(savedUser);
+        when(mapper.userToUserDTOResponse(savedUser)).thenReturn(response);
+
+        // when
+        UserDTOResponse update = service.update(userId, updateRequest);
+
+        // then
+        assertNotNull(update);
+        assertEquals(userId, update.id());
+        assertEquals("Lucas", update.username());
+
+        verify(repository).findById(userId);
+        verify(repository).save(savedUser);
+    }
+
+    @DisplayName("deve excluir usuario com sucesso")
+    @Test
+    void deve_excluir_usuario_com_sucesso() {
+        //given
+        //when
+        when(repository.findById(userId)).thenReturn(Optional.of(savedUser));
+        doNothing().when(repository).deleteById(userId);
+        //Then
+        service.delete(userId);
+
+
+        verify(repository).findById(userId);
+        verify(repository).deleteById(userId);
+        verify(repository, never()).save(any());
+    }
 }
