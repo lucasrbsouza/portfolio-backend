@@ -1,17 +1,13 @@
 package com.portfolio.portfolio.features.users.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
 @Table(name = "users")
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -21,12 +17,15 @@ public class User {
     private UUID id;
 
     @Column(unique = true, length = 50)
+    @Setter
     private String username;
 
+    @Setter
     private String password;
 
     @Column(length = 10)
     @Enumerated(EnumType.STRING)
+    @Setter
     private Roles roles;
 
 }

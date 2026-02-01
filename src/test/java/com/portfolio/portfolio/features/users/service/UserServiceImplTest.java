@@ -53,11 +53,10 @@ class UserServiceImplTest {
         user.setPassword("lucas123");
         user.setRoles(Roles.ADMIN);
 
-        savedUser = new User();
-        savedUser.setId(userId);
-        savedUser.setUsername("Lucas");
-        savedUser.setPassword("lucas123");
-        savedUser.setRoles(Roles.ADMIN);
+        savedUser = new User(
+                userId, "Lucas", "lucas123", Roles.ADMIN
+        );
+
 
         response = new UserDTOResponse(
                 savedUser.getId(),
