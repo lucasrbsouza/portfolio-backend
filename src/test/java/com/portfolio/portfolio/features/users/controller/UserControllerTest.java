@@ -1,13 +1,10 @@
 package com.portfolio.portfolio.features.users.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.portfolio.features.users.dto.UserDTORequest;
 import com.portfolio.portfolio.features.users.dto.UserDTOResponse;
 import com.portfolio.portfolio.features.users.model.Roles;
-import com.portfolio.portfolio.features.users.model.User;
 import com.portfolio.portfolio.features.users.service.UserService;
-import com.portfolio.portfolio.features.users.service.UserServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,8 +16,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -29,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserControllerTest {
 
     private static final String PATH = "/api/v1/users";
+    public static final String PATH_WITH_ID = PATH + "/{id}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -41,6 +39,7 @@ public class UserControllerTest {
     private UserDTORequest dtoRequest;
     private UserDTOResponse dtoResponse;
     private UUID id;
+
     @BeforeEach
     void setUp() {
         id = UUID.randomUUID();
@@ -62,8 +61,8 @@ public class UserControllerTest {
         when(userService.create(dtoRequest)).thenReturn(dtoResponse);
 
         mockMvc.perform(post(PATH)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dtoRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dtoRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.username").value("Lucas"))
@@ -81,18 +80,33 @@ public class UserControllerTest {
 
         when(userService.update(id, dtoRequest)).thenReturn(newUser);
 
-        mockMvc.perform(put(PATH+"/{id}",id).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dtoRequest)))
+        mockMvc.perform(put(PATH_WITH_ID, id).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dtoRequest)))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.username").value("lucas"))
                 .andExpect(jsonPath("$.roles").value(Roles.ADMIN.toString()));
     }
 
     @Test
-    void listUserByID() {
+    @DisplayName("Deve Listar Usuario por ID e retornar")
+    void deveListarUsuarioPorID() throws Exception {
+        when(userService.findById(id)).thenReturn(dtoResponse);
+
+        mockMvc.perform(get(PATH_WITH_ID, id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.username").value("Lucas"))
+                .andExpect(jsonPath("$.roles").value(Roles.ADMIN.toString()));
+
     }
 
     @Test
-    void deleteUser() {
+    void deleteUser() throws Exception {
+
+        doNothing().when(userService).delete(id);
+
+        mockMvc.perform(delete(PATH_WITH_ID, id))
+                .andExpect(status().isNoContent());
     }
 }
